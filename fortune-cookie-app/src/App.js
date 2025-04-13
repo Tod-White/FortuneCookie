@@ -13,6 +13,7 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [provider, setProvider] = useState(null);
   const [contract, setContract] = useState(null);
+  const [addressDropdownOpen, setAddressDropdownOpen] = useState(false);
 
   useEffect(() => {
     checkIfWalletIsConnected();
@@ -68,10 +69,31 @@ function App() {
 
       console.log("Connected", accounts[0]);
       setCurrentAccount(accounts[0]);
+      
+      // Re-initialize the provider and contract after connecting
+      const provider = new ethers.providers.Web3Provider(ethereum);
+      setProvider(provider);
+      
+      const signer = provider.getSigner();
+      const fortuneContract = new ethers.Contract(
+        CONTRACT_ADDRESS,
+        fortuneCookieABI,
+        signer
+      );
+      setContract(fortuneContract);
+      
       setupEventListener();
     } catch (error) {
       console.log(error);
     }
+  };
+
+  const logoutWallet = () => {
+    setCurrentAccount("");
+    setContract(null);
+    setProvider(null);
+    setFortune("");
+    setAddressDropdownOpen(false);
   };
 
   const setupEventListener = async () => {
@@ -130,14 +152,38 @@ function App() {
     }
   };
 
+  const followOnTwitter = () => {
+    window.open(`https://twitter.com/intent/follow?screen_name=MetaDogeisme`, "_blank");
+  };
+
   const shareFortune = () => {
-    const tweetText = encodeURIComponent(`My blockchain fortune cookie says: "${fortune}" via @SomniaFortunes #BlockchainFortune`);
+    const tweetText = encodeURIComponent(`My blockchain fortune cookie says: "${fortune}" via @quillsadventure Fortune Cookie on @Somnia_Network`);
     window.open(`https://twitter.com/intent/tweet?text=${tweetText}`, "_blank");
   };
 
   return (
     <div className="app-container">
-      <h1>Blockchain Fortune Cookie</h1>
+      <h1>Quills' Fortune Cookie</h1>
+
+      {currentAccount && (
+        <div className="address-container">
+          <div 
+            className="address-display" 
+            onClick={() => setAddressDropdownOpen(!addressDropdownOpen)}
+          >
+            Connected: {currentAccount.slice(0, 6)}...{currentAccount.slice(-4)}
+            <span className="dropdown-arrow">▼</span>
+          </div>
+          
+          {addressDropdownOpen && (
+            <div className="address-dropdown">
+              <button className="logout-button" onClick={logoutWallet}>
+                Disconnect Wallet
+              </button>
+            </div>
+          )}
+        </div>
+      )}
       
       {!currentAccount && (
         <button className="connect-button" onClick={connectWallet}>
@@ -169,6 +215,9 @@ function App() {
               <button className="share-button" onClick={shareFortune}>
                 Share on X
               </button>
+              <button className="follow-button" onClick={followOnTwitter}>
+                Follow @MetaDogeisme
+              </button> 
               <button className="reset-button" onClick={() => setFortune("")}>
                 Get Another Fortune
               </button>
